@@ -4,3 +4,6 @@
 *.iml
 **/out/
 **/build/
+
+# We dont need this for buildSrc
+settings.gradle
