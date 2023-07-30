@@ -1,0 +1,12 @@
+plugins {
+    id 'groovy'
+}
+
+repositories {
+    gradlePluginPortal()
+}
+
+dependencies {
+    compileOnly gradleApi()
+    compileOnly localGroovy()
+}
