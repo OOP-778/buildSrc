@@ -1,9 +1,13 @@
 package dev.oop778.gradle.common
 
+import org.apache.tools.ant.Task
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
-import org.gradle.jvm.tasks.Jar
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.plugins.signing.SigningExtension
 
 class CommonPlugin implements Plugin<Project> {
@@ -19,9 +23,68 @@ class CommonPlugin implements Plugin<Project> {
             setupPublishing()
         }
 
-        project.tasks.withType(Jar.class).configureEach {
-            destinationDirectory.set(project.rootProject.rootDir.toPath().resolve("out").toFile())
+        project.afterEvaluate {
+            project.getExtensions().configure(JavaPluginExtension.class, extension -> {
+                println("configuring: ${project.name}")
+
+                for (final def sourceSet in [extension.sourceSets.getByName("test"), extension.sourceSets.getByName("main")] ) {
+                    if (sourceSet.annotationProcessorPath.isEmpty()) {
+                        return
+                    }
+
+                    if (sourceSet.allSource.isEmpty()) {
+                        return
+                    }
+
+                    println("registered annotation processor for ${project.name} ${sourceSet.name}")
+                    registerAnnotationProcessorFor(sourceSet)
+                }
+            })
+
+            project.tasks.register("runAnnotationProcessors", task -> {
+                task.setGroup("annotationProcessor")
+
+                org.gradle.api.Task mainProcessorTask = project.tasks.findByName("runMainAnnotationProcessor")
+                if (mainProcessorTask != null) {
+                    task.dependsOn(mainProcessorTask)
+                }
+
+                org.gradle.api.Task testProcessorTask = project.tasks.findByName("runTestAnnotationProcessor")
+                if (testProcessorTask != null) {
+                    task.dependsOn(testProcessorTask)
+                }
+            })
         }
+    }
+
+    private void registerAnnotationProcessorFor(SourceSet sourceSet) {
+        project.tasks.register("run${sourceSet.name.capitalize()}AnnotationProcessor", JavaCompile.class, task -> {
+            task.setGroup("annotationProcessor")
+
+            // Set the source set to process
+            task.setSource(sourceSet.getJava().getSrcDirs())
+
+            // Set the classpath to include the necessary dependencies
+            task.setClasspath(sourceSet.getCompileClasspath())
+
+            // Set the destination directory for generated sources (not compiled classes)
+            task.destinationDirectory.set(project.file("${project.buildDir}/generated"))
+
+            // Use the annotation processor classpath
+            task.getOptions().setAnnotationProcessorPath(sourceSet.annotationProcessorPath)
+
+            // Disable the actual bytecode output and only run annotation processors
+            task.getOptions().getCompilerArgs().add("-proc:only")
+
+            // Optionally, set the directory where the generated sources will be placed
+            task.getOptions().generatedSourceOutputDirectory.set(
+                    project.file("${project.buildDir}/generated/sources/oxygen/java/${sourceSet.name}")
+            )
+
+            // Ensure the task is up-to-date only when sources or annotation processors change
+            task.getInputs().files(sourceSet.getJava().getSrcDirs())
+            task.getOutputs().dir("${project.buildDir}/generated/sources/oxygen/java/${sourceSet.name}")
+        })
     }
 
     private void setupSigning(PublishingExtension publishing) {
@@ -64,7 +127,7 @@ class CommonPlugin implements Plugin<Project> {
     }
 
     private void setupPublishing() {
-        project.extensions.configure(PublishingExtension.class) {publishing ->
+        project.extensions.configure(PublishingExtension.class) { publishing ->
             // Setup signing
             setupSigning(publishing)
 
