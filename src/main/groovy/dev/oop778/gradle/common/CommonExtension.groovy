@@ -15,7 +15,6 @@ class CommonExtension {
     }
 
     void applyCommonToAllProjects() {
-        println("Applying from project ${project.name}")
         project.allprojects { subproject ->
             if (ignoredProjects.any { subproject.name.contains(it) }) {
                 return
