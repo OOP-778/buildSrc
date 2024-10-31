@@ -25,8 +25,9 @@ class CommonPlugin implements Plugin<Project> {
     }
 
     private void setupSigning(PublishingExtension publishing) {
-        System.getenv("SIGN_KEY")?.with { signingKey ->
+        System.getenv("SIGN_KEY")?.with { signingKeyBase64 ->
             System.getenv("SIGN_PASSWORD")?.with { signingPassword ->
+                println "setting up signing"
                 if (!project.pluginManager.hasPlugin("signing")) {
                     project.apply plugin: "signing"
                     println "Applied signing plugin to ${project.name} (You should usually apply it yourself, this is just a warning for " +
@@ -34,7 +35,7 @@ class CommonPlugin implements Plugin<Project> {
                 }
 
                 project.extensions.configure(SigningExtension.class) { signing ->
-                    signing.useInMemoryPgpKeys(signingKey, signingPassword)
+                    signing.useInMemoryPgpKeys(new String(Base64.getDecoder().decode(signingKeyBase64.getBytes())), signingPassword)
                     publishing.publications.configureEach {
                         println "Signing publication ${it.name} for ${project.name}"
                         signing.sign(it)
