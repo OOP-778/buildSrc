@@ -25,8 +25,8 @@ class CommonPlugin implements Plugin<Project> {
     }
 
     private void setupSigning(PublishingExtension publishing) {
-        project.findProperty("signingKey")?.with { signingKey ->
-            project.findProperty("signingPassword")?.with { signingPassword ->
+        System.getenv("SIGN_KEY")?.with { signingKey ->
+            System.getenv("SIGN_PASSWORD")?.with { signingPassword ->
                 if (!project.pluginManager.hasPlugin("signing")) {
                     project.apply plugin: "signing"
                     println "Applied signing plugin to ${project.name} (You should usually apply it yourself, this is just a warning for " +
@@ -45,9 +45,9 @@ class CommonPlugin implements Plugin<Project> {
     }
 
     private void setupPublishingRepository(PublishingExtension publishing) {
-        project.findProperty("osshrUsername")?.with { osshrUsername ->
-            project.findProperty("osshrPassword")?.with { osshrPassword ->
-                boolean isSnapshot = (project.properties["version"] as String).contains("SNAPSHOT")
+        System.getenv("MAVEN_USERNAME")?.with { osshrUsername ->
+            System.getenv("MAVEN_PASSWORD")?.with { osshrPassword ->
+                boolean isSnapshot = (System.getenv("VERSION") as String).contains("SNAPSHOT")
 
                 publishing.repositories.maven {
                     name = "OSSRH"

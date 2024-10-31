@@ -36,8 +36,8 @@ class CommonExtension {
             publishing.publications.register(componentName, MavenPublication.class).configure {
                 from component
 
-                groupId = project.properties["maven.groupId"]
-                version = project.properties["version"]
+                groupId = System.getenv("GROUP")
+                version = System.getenv("VERSION")
                 artifactId = componentName
             }
         }
