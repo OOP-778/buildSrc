@@ -106,8 +106,8 @@ class DeployerExtension {
                 it.releaseManagement.set(releaseManagement.name())
             }
 
-            project.afterEvaluate {
-                project.getTasks().named("publish").configure {publish -> publishTask.configure { it.mustRunAfter(publish)}}
+            project.tasks.named("publish") {
+                it.finalizedBy(publishTask)
             }
         }
     }
