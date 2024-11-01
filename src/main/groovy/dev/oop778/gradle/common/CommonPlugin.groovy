@@ -4,7 +4,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.jvm.tasks.Jar
-import org.gradle.plugins.signing.SigningExtension
 
 class CommonPlugin implements Plugin<Project> {
     private Project project
@@ -13,7 +12,9 @@ class CommonPlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
         println "Applying common plugin to ${project.name}"
+
         project.extensions.create("common", CommonExtension.class, project)
+        project.extensions.create("deployer", DeployerExtension.class, project)
 
         project.pluginManager.withPlugin("maven-publish") {
             setupPublishing()
@@ -24,53 +25,8 @@ class CommonPlugin implements Plugin<Project> {
         }
     }
 
-    private void setupSigning(PublishingExtension publishing) {
-        System.getenv("SIGN_KEY")?.with { signingKeyBase64 ->
-            System.getenv("SIGN_PASSWORD")?.with { signingPassword ->
-                println "setting up signing"
-                if (!project.pluginManager.hasPlugin("signing")) {
-                    project.apply plugin: "signing"
-                    println "Applied signing plugin to ${project.name} (You should usually apply it yourself, this is just a warning for " +
-                            "unexpected behavior)"
-                }
-
-                project.extensions.configure(SigningExtension.class) { signing ->
-                    signing.useInMemoryPgpKeys(new String(Base64.getDecoder().decode(signingKeyBase64.getBytes())), signingPassword)
-                    publishing.publications.configureEach {
-                        println "Signing publication ${it.name} for ${project.name}"
-                        signing.sign(it)
-                    }
-                }
-            }
-        }
-    }
-
-    private void setupPublishingRepository(PublishingExtension publishing) {
-        System.getenv("MAVEN_USERNAME")?.with { osshrUsername ->
-            System.getenv("MAVEN_PASSWORD")?.with { osshrPassword ->
-                boolean isSnapshot = (System.getenv("VERSION") as String).contains("SNAPSHOT")
-
-                publishing.repositories.maven {
-                    name = "OSSRH"
-                    url = isSnapshot
-                            ? "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                            : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                    credentials {
-                        username = osshrUsername
-                        password = osshrPassword
-                    }
-                }
-            }
-        }
-    }
-
     private void setupPublishing() {
         project.extensions.configure(PublishingExtension.class) {publishing ->
-            // Setup signing
-            setupSigning(publishing)
-
-            // Setup repositories
-            setupPublishingRepository(publishing)
 
             publishing.publications.configureEach {
                 it.pom {

@@ -23,23 +23,4 @@ class CommonExtension {
             subproject.apply plugin: CommonPlugin
         }
     }
-
-    void createPublicationFrom(SoftwareComponent component, String componentName) {
-        if (!project.pluginManager.hasPlugin("maven-publish")) {
-            project.apply plugin: "maven-publish"
-            println "Applied maven-publish plugin to ${project.name} (You should usually apply it yourself, this is just a warning for " +
-                    "unexpected behavior)"
-        }
-
-        project.extensions.configure(PublishingExtension.class) { publishing ->
-            println "Configuring publishing for ${project.name}"
-            publishing.publications.register(componentName, MavenPublication.class).configure {
-                from component
-
-                groupId = System.getenv("GROUP")
-                version = System.getenv("VERSION")
-                artifactId = componentName
-            }
-        }
-    }
 }
