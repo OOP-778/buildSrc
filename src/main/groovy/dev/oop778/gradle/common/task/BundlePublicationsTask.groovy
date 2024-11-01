@@ -19,7 +19,6 @@ import java.util.zip.ZipOutputStream
 
 abstract class BundlePublicationsTask extends DefaultTask {
 
-
     BundlePublicationsTask() {
         destinationDirectory.convention(project.layout.buildDirectory.dir("bundles"))
         outputFile.convention(destinationDirectory.file(publication.map { "${it.groupId}-${it.artifactId}-${it.version}.zip" }))
