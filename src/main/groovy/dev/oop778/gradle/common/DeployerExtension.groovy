@@ -104,9 +104,9 @@ class DeployerExtension {
                 it.password.set(token)
                 it.archiveFile.set(bundlerTask.map { it.outputFile }.get())
                 it.releaseManagement.set(releaseManagement.name())
-
-                project.getTasks().named("publish").configure {publish -> publish.finalizedBy(it)}
             }
+
+            project.getTasks().named("publish").configure {publish -> publishTask.configure { it.mustRunAfter(publish)}}
         }
     }
 
